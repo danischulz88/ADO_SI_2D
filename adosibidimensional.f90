@@ -7,24 +7,24 @@ double precision::  hx, hy, compx, compy, tol
 double precision, dimension(:,:,:), allocatable :: psi_medioxy, psi_medioy,psi_mediox
 double precision, dimension (:,:), allocatable ::sigma_t, sigma_s0, sigma_s1, q, R
 double precision, dimension(:), allocatable:: as, bs
-! vari�veis para medi��o de tempo de execu��o
+! variaveis para medicao de tempo de execucao
 double precision :: t
 integer, dimension(8) :: t0,t1
-!variaveis de automatiza��o
+!variaveis de automatizacao
 integer, dimension(6)::direcoes, discret
 
     !Varredura 2D
 
-    ! Considera o particionamento de uma regi�o de comprimento LxM em J c�lulas ao longo do eixo X,
-    !com J+1 paredes;e K c�lulas no eixo Y com K+1 paredes;fluxos angulares s�o calculados em cada
-    !parede (logo, psi tem N dire��es em J+1 posi��es em X e K+1 posi��es em Y);fluxos angulares
-    !m�dios s�o calculados no meio de cada c�lula (logo,psi_medio tem N dire��es em J posi��es em
-    !X e K posi��es em Y); o tamanho de cada c�lula pode ser constante ou n�o.
+    ! Considera o particionamento de uma regiao de comprimento LxM em J c�lulas ao longo do eixo X,
+    !com J+1 paredes;e K celulas no eixo Y com K+1 paredes;fluxos angulares sao calculados em cada
+    !parede (logo, psi tem N direcoes em J+1 posicoes em X e K+1 posicoes em Y);fluxos angulares
+    !medios sao calculados no meio de cada celula (logo,psi_medio tem N direcoes em J posicoes em
+    !X e K posicoes em Y); o tamanho de cada celula pode ser constante ou nao.
     open(unit=10,file='fluxbidi.txt')
     open(unit=20,file='regioessi.txt')
     open(unit=30,file='regioessiado.txt')
-    100 format(' ',1I, 1I, 1E20.6)
-    !inicializa��es do problema
+    100 format(' ',1I20, 1I20, 1E20.6)
+    !inicializacoes do problema
 
     ! print *,'Digite a ordem da quadratura (ex. S_4 digite 4)'
     !read *, n
@@ -55,14 +55,14 @@ integer, dimension(6)::direcoes, discret
     ndx=3!numero de regioes no eixo x
     ndy=3!numero de regioes no eixo y
 
-	nado=4!numero de pontos em x e/ou y para as dire��es
+	nado=4!numero de pontos em x e/ou y para as direcoes
 
     allocate(R(ndx, ndy), as(ndx), bs(ndy))
     do ll=1, 6
       do l=1, 6
 
-            n=direcoes(l)!numero de dire��es para a varredura
-            ! defini��es das constantes do problema
+            n=direcoes(l)!numero de direcoes para a varredura
+            ! definicoes das constantes do problema
             compx=50.d0;compy=50.d0; jj=discret(ll);kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
              !compx=1.d0;compy=1.d0; jj=10;kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
             print*, 'n ; jxk', n, jj,'x',kk
@@ -74,7 +74,7 @@ integer, dimension(6)::direcoes, discret
             allocate(sigma_s0(jj,kk))
             allocate(sigma_s1(jj,kk))
             allocate(s(jj,kk),q(jj,kk) )
-            !pontos de divis�o das regioes para obter fluxos m�dios
+            !pontos de divisao das regioes para obter fluxos medios
             as(1)=1.d0
             bs(1)=1.d0
             as(2)=45.d0
@@ -87,15 +87,15 @@ integer, dimension(6)::direcoes, discret
 			sigma_t=1.d0
 			sigma_s0=0.95d0
             sigma_s1=0.5d0
-            !parametros na regi�o da fonte
+            !parametros na regiao da fonte
             sigma_t(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.8d0
             sigma_s0(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.4d0
             sigma_s1(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.2d0
 
-			!inicializa�ao da fonte
+			!inicializacao da fonte
             q=0.
             q(1:nint(as(1)/hx), 1:nint(bs(1)/hy)) = 1.d0 !magnitude da fonte em [0,as]x[0,bs]
-            !inicializa��o dos par�metros de entrada
+            !inicializacao dos parametros de entrada
             psi_mediox = 0.d0
             psi_medioy = 0.d0
             psi_medioxy= 0.d0
@@ -137,11 +137,11 @@ integer, dimension(6)::direcoes, discret
 !$$$$$$             call date_and_time(values=t0)
 !$$$$$$             call ado_bi(nado, jj, kk, sigma_t(1,1), sigma_s0(1,1), compx,compy, as, bs, hx, hy,q(1,1), s, R1, R2, R3, R4)
 !$$$$$$             print *,' fluxos nas regioes R1=', R1, 'R2=', R2, 'R3=', R3, 'R4=', R4
-!$$$$$$             !n= numero de divis�es por eixo
-!$$$$$$             !M= numero de dire��es totais
+!$$$$$$             !n= numero de divisoes por eixo
+!$$$$$$             !M= numero de direcoes totais
 !$$$$$$             !j=M/2
-!$$$$$$             !jj= numero de c�lulas na discretiza��o espacial x
-!$$$$$$             !kk= numero de c�lulas na discretiza��o espacial y
+!$$$$$$             !jj= numero de celulas na discretizacao espacial x
+!$$$$$$             !kk= numero de celulas na discretizacao espacial y
 !$$$$$$             call si_bi(n, jj, kk, hx, hy, tol, sigma_t, sigma_s0,sigma_s1, q, psi_mediox, psi_medioy, psi_medioxy, s, nit, as, bs,&
 !$$$$$$                         R1, R2, R3, R4)
 !$$$$$$             call date_and_time(values=t1)
@@ -164,11 +164,8 @@ integer, dimension(6)::direcoes, discret
 !$$$$$$             !print *,' fluxos nas regioes R1=', R1, 'R2=', R2, 'R3=', R3, 'R4=', R4
 !$$$$$$
 !$$$$$$             ! inicializa psi na fronteira
-!$$$$$$             psi_mediox(n*(n+2)/4+1:n*(n+2)/2,1:jj, kk+1) = 0.d0
-!$$$$$$             psi_medioy(n*(n+2)/4+1:n*(n+2)/2,jj+1,1: kk) = 0.d0
-!$$$$$$             s=0.d0
 
-            !Chama SI+ado(for�ado
+            !Chama SI+ado(forcado
             !inicializacao dos parametros
             psi_mediox = 0.d0
             psi_medioy = 0.d0
@@ -184,7 +181,7 @@ integer, dimension(6)::direcoes, discret
             call date_and_time(values=t1)
             t = diferenca_tempo(t0,t1)
             print *,'SI+ADO(forcado):numero de iteracoes: nit=', nit
-           ! print *,'SI+ADO(for�ado): Tempo de execucao: t=',t,' s'
+           ! print *,'SI+ADO(forcado): Tempo de execucao: t=',t,' s'
             do i=1, ndx
               do j=1, ndy
                 print *,'SI+ADO(forcado):i, j,  fluxos nas regioes R(i,j)=',i, j, R(i,j)
@@ -215,8 +212,8 @@ integer, dimension(6)::direcoes, discret
         double precision, dimension(:), allocatable:: peso,Omegamu, Omegaeta, ni, gama, VetSol
         double precision, dimension (:,:), allocatable::  U, V, phiy, U2, V2, phix
 
-        	M=(n*(n+2))/2!numero total de dire��es
-    		j=M/2 !numero de dire��es em cada sentido
+        	M=(n*(n+2))/2!numero total de direcoes
+    		j=M/2 !numero de direcoes em cada sentido
             open(unit=10,file='adobi.txt')
             allocate(peso(M), Omegamu(j), Omegaeta(j), U(j,j), V(j,j), phiy(M, j), U2(j,j), V2(j,j), phix(M,j), &
                         ni(j), gama(j), VetSol(8*M))
@@ -367,7 +364,7 @@ integer, dimension(6)::direcoes, discret
                     end select
                 end do
 
-                !preenche o vetor de posi��es mu e eta no primeiro quadrante
+                !preenche o vetor de posicoes mu e eta no primeiro quadrante
                 l=0
                 do i=n/2,1, -1
                     do x=1, n/2-i+1
@@ -488,6 +485,7 @@ integer, dimension(6)::direcoes, discret
                !pause
         end subroutine calcula_erro
 
+
         !==============================================================================================================
         subroutine corrente(n, j, k, peso, Omega, psi_medioxy, J1, J2)
         !==============================================================================================================
@@ -539,8 +537,8 @@ integer, dimension(6)::direcoes, discret
                   y(i)=nint(bs(i)/hy)
                	end do
 
-				!i, l correm nas regi�es
-                !m, n s�o indices para o somatorio em cada c�lula da malha em cada regi�o
+				!i, l correm nas regioes
+                !m, n sao indices para o somatorio em cada celula da malha em cada regiao
 
                 do i=1, ndx
                   do l=1, ndy
@@ -636,7 +634,7 @@ integer, dimension(6)::direcoes, discret
             end do
 
 
-            !preenche o vetor de posi��es mu e eta no primeiro quadrante
+            !preenche o vetor de posicoes mu e eta no primeiro quadrante
             l=0
             do i=n/2,1, -1
               do x=1, n/2-i+1
@@ -974,7 +972,7 @@ integer, dimension(6)::direcoes, discret
             VetSol(2*M+1:3*M)=q*bs/b
 
 
-            !dgetrf(M,N,A,lda, ipiv, info) calcula a fatora��o LU de uma matriz A , mxn usando pivotamento parcial
+            !dgetrf(M,N,A,lda, ipiv, info) calcula a fatoracao LU de uma matriz A , mxn usando pivotamento parcial
             !sem troca de linhas onde:
             !M(input), integer, numero de linhas da matriz
             !N(input), integer, numero de colunas da matriz A
@@ -989,14 +987,14 @@ integer, dimension(6)::direcoes, discret
     !$$$$$$             end if
 
             !dgetrs(trans,N,nrhs,A,lda, ipiv, B, LDB, info) resolve um sistema linear AX=B, A'X=B ou A*X=b
-            !usando a fatora��o LU onde:
+            !usando a fatoracao LU onde:
             !trans(input, caracter, 'N',AX=B (no transpose), 'T', A'X=B(transpose), 'C', A*X=B (conjugate transpose)
             !N(input), integer, ordem da matriz A
             !nrhs(input), integer, numero de colunas de B
-            !A(input), fatores L e U da fatora��o A=P*L*U, com L com diagonal de um
-            !lda(input) integer, dimens�o maxima do vetor A. Lda>=max(1,M)
+            !A(input), fatores L e U da fatoracao A=P*L*U, com L com diagonal de um
+            !lda(input) integer, dimensao maxima do vetor A. Lda>=max(1,M)
             !ipiv(input)integer, vetor de dimensao(min(M,N)).
-            !B(input/output) real/complex array dimension(M, nrhs), entra B e sai X, solu��o do sistema
+            !B(input/output) real/complex array dimension(M, nrhs), entra B e sai X, solucao do sistema
             !ldb(input) integer, numero de linhas de B
             !info(output) integer, =0 successful exit, ou se <0 deu algum erro
               call dgetrs('N', 8*M , 1, MAT , 8*M, ipiv, VetSol, 8*M, info)
@@ -1035,7 +1033,7 @@ integer, dimension(6)::direcoes, discret
                     psiy=0.d0
                     psix=0.d0
 
-                    !solu��o na fonte
+                    !solu�cao na fonte
                     if (x<=as) then
                         do i=1, j
                             psix1=0.d0
@@ -1063,7 +1061,7 @@ integer, dimension(6)::direcoes, discret
                         end do
                     end if
                     if (x>=as) then
-                    !solu��o sem fonte
+                    !solucao sem fonte
                         do i=1, j
                             psix1=0.d0
                             psix2=0.d0
@@ -1078,7 +1076,7 @@ integer, dimension(6)::direcoes, discret
                         end do
                     end if
                     if (y>=bs) then
-                    !solu��o sem fonte
+                    !solucao sem fonte
                         do i=1, j
                             psiy1=0.d0
                             psiy2=0.d0
@@ -1121,10 +1119,10 @@ integer, dimension(6)::direcoes, discret
         !============================================================================================
         implicit none
         integer, dimension(8), intent(in) :: t0,t1
-        ! t0 e t1 s�o valores retornados pela chamada do intr�nseco DATE_AND_TIME()
-        ! valor � a diferen�a de tempo, em segundos
-        ! somente pode ser usada para medi��o de tempo de trechos de programa que executem
-        ! em menos de um m�s
+        ! t0 e t1 sao valores retornados pela chamada do intr�nseco DATE_AND_TIME()
+        ! valor e a diferenca de tempo, em segundos
+        ! somente pode ser usada para medicao de tempo de trechos de programa que executem
+        ! em menos de um mes
         double precision :: t0_ms,t1_ms
             t0_ms = t0(3)*24*3600.0D3+t0(5)*3600.0D3+t0(6)*60.0D3+t0(7)*1.0D3+t0(8)
             t1_ms = t1(3)*24*3600.0D3+t1(5)*3600.0D3+t1(6)*60.0D3+t1(7)*1.0D3+t1(8)

@@ -15,7 +15,7 @@ integer, dimension(6)::direcoes, discret
 
     !Varredura 2D
 
-    ! Considera o particionamento de uma regiao de comprimento LxM em J c�lulas ao longo do eixo X,
+    ! Considera o particionamento de uma regiao de comprimento LxM em J celulas ao longo do eixo X,
     !com J+1 paredes;e K celulas no eixo Y com K+1 paredes;fluxos angulares sao calculados em cada
     !parede (logo, psi tem N direcoes em J+1 posicoes em X e K+1 posicoes em Y);fluxos angulares
     !medios sao calculados no meio de cada celula (logo,psi_medio tem N direcoes em J posicoes em
@@ -58,8 +58,8 @@ integer, dimension(6)::direcoes, discret
 	nado=4!numero de pontos em x e/ou y para as direcoes
 
     allocate(R(ndx, ndy), as(ndx), bs(ndy))
-    do ll=1, 6
-      do l=1, 6
+    do l=1, 6
+      do ll=1, 6
 
             n=direcoes(l)!numero de direcoes para a varredura
             ! definicoes das constantes do problema
@@ -122,7 +122,7 @@ integer, dimension(6)::direcoes, discret
             end do
              write(20, *)n, jj, nit
              do i=1, ndx
-              do j=1, ndy
+              do j=i , ndy
                 write(20, 100)i, j, R(i,j)
               enddo
            end do

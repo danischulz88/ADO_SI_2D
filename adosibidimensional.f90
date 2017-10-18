@@ -1,18 +1,19 @@
 program ado_bidimensional
 implicit none
 
-integer:: n, kk, jj, nado, nit, l,ll, ndx, ndy,  i, j
+integer:: n, kk, jj, nado, nit, l,ll, ndx, ndy,  i, j, k, prop
 double precision, dimension (:,:), allocatable::  s
 double precision::  hx, hy, compx, compy, tol
 double precision, dimension(:,:,:), allocatable :: psi_medioxy, psi_medioy,psi_mediox
 double precision, dimension (:,:), allocatable ::sigma_t, sigma_s0, sigma_s1, q, R
 double precision, dimension(:), allocatable:: as, bs
+double precision, dimension(882):: dadoscamila
 ! variaveis para medicao de tempo de execucao
 double precision :: t
 integer, dimension(8) :: t0,t1
 !variaveis de automatizacao
 integer, dimension(6)::direcoes, discret
-
+    !prop eh o numero de vezes que o numero de pontos fornecidos pelo ado forcado  cabe na malha
     !Varredura 2D
 
     ! Considera o particionamento de uma regiao de comprimento LxM em J celulas ao longo do eixo X,
@@ -23,9 +24,12 @@ integer, dimension(6)::direcoes, discret
     open(unit=10,file='fluxbidi.txt')
     open(unit=20,file='regioessi.txt')
     open(unit=30,file='regioessiado.txt')
+    open(unit=40,file='dadosproblema3.dat',status='old')
     100 format(' ',1I20, 1I20, 1E20.6)
     !inicializacoes do problema
-
+    do i=1, 882
+      read(40, *)dadoscamila(i)
+    end do
     ! print *,'Digite a ordem da quadratura (ex. S_4 digite 4)'
     !read *, n
     direcoes(1)=2
@@ -40,20 +44,26 @@ integer, dimension(6)::direcoes, discret
 !$$$$$$     discret(4)=10
 !$$$$$$     discret(5)=50
 !$$$$$$     discret(6)=100
-!$$$$$$     discret(1)=3
-!$$$$$$     discret(2)=6
-!$$$$$$     discret(3)=15
-!$$$$$$     discret(4)=30
-!$$$$$$     discret(5)=60
-!$$$$$$     discret(6)=120
-    discret(1)=50
-    discret(2)=100
-    discret(3)=150
-    discret(4)=200
-    discret(5)=250
-    discret(6)=300
-    ndx=3!numero de regioes no eixo x
-    ndy=3!numero de regioes no eixo y
+! $$$$$$     discret(1)=3
+! $$$$$$     discret(2)=6
+! $$$$$$     discret(3)=15
+! $$$$$$     discret(4)=30
+! $$$$$$     discret(5)=60
+! $$$$$$     discret(6)=120
+    ! discret(1)=50
+    ! discret(2)=100
+    ! discret(3)=150
+    ! discret(4)=200
+    ! discret(5)=250
+    ! discret(6)=300
+    discret(1)=21
+    discret(2)=42
+    discret(3)=63
+    discret(4)=84
+    discret(5)=105
+    discret(6)=126
+    ndx=2!numero de regioes no eixo x
+    ndy=2!numero de regioes no eixo y
 
 	nado=4!numero de pontos em x e/ou y para as direcoes
 
@@ -63,9 +73,10 @@ integer, dimension(6)::direcoes, discret
 
             n=direcoes(l)!numero de direcoes para a varredura
             ! definicoes das constantes do problema
-            compx=50.d0;compy=50.d0; jj=discret(ll);kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
+            compx=30.d0;compy=30.d0; jj=discret(ll);kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
              !compx=1.d0;compy=1.d0; jj=10;kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
             print*, 'n ; jxk', n, jj,'x',kk
+            prop=jj/21
 
             allocate(psi_medioxy(n*(n+2)/2,jj, kk))
             allocate(psi_mediox(n*(n+2)/2, jj, kk+1))
@@ -75,22 +86,20 @@ integer, dimension(6)::direcoes, discret
             allocate(sigma_s1(jj,kk))
             allocate(s(jj,kk),q(jj,kk) )
             !pontos de divisao das regioes para obter fluxos medios
-            as(1)=1.d0
-            bs(1)=1.d0
-            as(2)=45.d0
-            bs(2)=45.d0
-            as(3)=50.d0
-            bs(3)=50.d0
+            as(1)=10.d0
+            bs(1)=10.d0
+            as(2)=30.d0
+            bs(2)=30.d0
 !$$$$$$             as(3)=50.d0
 !$$$$$$             bs(3)=50.d0
             !parametros gerais do programa
-			sigma_t=1.d0
-			sigma_s0=0.95d0
-            sigma_s1=0.5d0
+			sigma_t=2.d0
+			sigma_s0=0.1d0
+            sigma_s1=0.0d0
             !parametros na regiao da fonte
-            sigma_t(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.8d0
-            sigma_s0(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.4d0
-            sigma_s1(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.2d0
+            sigma_t(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=1.0d0
+            sigma_s0(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.5d0
+            sigma_s1(1:nint(as(1)/hx), 1:nint(bs(1)/hy))=0.0d0
 
 			!inicializacao da fonte
             q=0.
@@ -172,10 +181,13 @@ integer, dimension(6)::direcoes, discret
             psi_medioxy= 0.d0
             s=0.d0
             call date_and_time(values=t0)
-!$$$$$$             s(1:nint(as/hx), 1:nint(bs/hy))=1.8362d0
-!$$$$$$             s(1:nint(as/hx), nint(bs/hy)+1:kk)=0.010658d0
-!$$$$$$             s(nint(as/hx)+1:jj, 1:nint(bs/hy))=0.010658d0
-!$$$$$$             s(nint(as/hx)+1:jj, nint(bs/hy)+1:kk)=0.00011739d0
+            do i=1, 21
+              do j=1, 21
+                k=2*j+42*(i-1)-1
+                S((i-1)*prop+1:prop*i, (j-1)*prop+1:prop*j)=(dadoscamila(k)+dadoscamila(k+1))/2
+              end do
+            end do
+
             call si_bi(n, jj, kk, hx, hy, tol, sigma_t, sigma_s0,sigma_s1, q, psi_mediox, psi_medioy, psi_medioxy, s, nit, as, bs,&
                         ndx, ndy,R)
             call date_and_time(values=t1)

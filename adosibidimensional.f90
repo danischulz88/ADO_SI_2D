@@ -4,10 +4,13 @@ PROGRAM ado_bidimensional
   INTEGER:: n, kk, jj, nado, nit, l,ll, ndx, ndy,  i, j, k, prop, ncell
   DOUBLE PRECISION, DIMENSION (:,:), ALLOCATABLE::  s
   DOUBLE PRECISION::  hx, hy, compx, compy, tol
+  DOUBLE PRECISION:: in_sigma_t, in_sigma_s0, in_sigma_s1, source_sigma_t, source_sigma_s0, source_sigma_s1, insource
   DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: psi_medioxy, psi_medioy,psi_mediox
   DOUBLE PRECISION, DIMENSION (:,:), ALLOCATABLE ::sigma_t, sigma_s0, sigma_s1, q, R
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE:: as, bs
   DOUBLE PRECISION, DIMENSION(5000):: dadoscamila
+  CHARACTER(len=80) :: nome_arquivo,buffer
+  LOGICAL :: existe
   ! variaveis para medicao de tempo de execucao
   DOUBLE PRECISION :: t
   INTEGER, DIMENSION(8) :: t0,t1
@@ -53,42 +56,76 @@ PROGRAM ado_bidimensional
   direcoes(4)=8
   direcoes(5)=12
   direcoes(6)=16
-  !$$$$$$     discret(1)=2
-  !$$$$$$     discret(2)=4
-  !$$$$$$     discret(3)=8
-  !$$$$$$     discret(4)=10
-  !$$$$$$     discret(5)=50
-  !$$$$$$     discret(6)=100
-  !  discret(1)=3
-  !  discret(2)=6
-  !  discret(3)=15
-  !  discret(4)=30
-  !  discret(5)=60
-  !  discret(6)=120
-  discret(1)=600
-  discret(2)=100
-  discret(3)=150
-  discret(4)=200
-  discret(5)=250
-  discret(6)=300
-  ! discret(1)=21
-  ! discret(2)=42
-  ! discret(3)=63
-  ! discret(4)=84
-  ! discret(5)=105
-  ! discret(6)=126
-  ndx=3!numero de regioes no eixo x
-  ndy=3!numero de regioes no eixo y
+  PRINT *,'Entre o nome do arquivo de dados:'
+  READ *,nome_arquivo
+  INQUIRE(file=nome_arquivo,exist=existe)
+  IF (.NOT.existe) THEN
+     PRINT *,'Arquivo inexistente, terminando...'
+     STOP
+  END IF
 
+
+  OPEN(unit=90,file=nome_arquivo,status='old', action='read')
+  !numero de celulas
+  DO i=1,6
+     READ(90, *),discret(i)
+  END DO
+  PRINT*, 'discret', discret
+  !numero de regioes no eixo x
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)ndx
+  PRINT*, 'ndx', ndx
+  !numero de regioes no eixo y
+  READ(90, '(/A80)')buffer ;PRINT*, 'ok', buffer; READ(buffer, *, err=900)ndy
+  PRINT*, 'ndy', ndy
+  ALLOCATE(R(ndx, ndy), as(ndx), bs(ndy))
   nado=4!numero de pontos em x e/ou y para as direcoes
 
-  ALLOCATE(R(ndx, ndy), as(ndx), bs(ndy))
+  ! definicoes das constantes do problema
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)compx
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)compy
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)tol
+  PRINT*, 'compx, compy, tol', compx, compy, tol
+
+  DO i=1, ndx
+     READ(90, *), as(i)
+  END DO
+  PRINT*, 'as', as
+
+  PRINT*, 'bs', bs
+  PAUSE
+  DO i=1, ndy
+     READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)bs(i)
+     PRINT*, 'i, bs(i)', i, bs(i)
+     PAUSE
+  END DO
+  PRINT*, 'bs',bs
+
+  !parametros gerais do programa
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)in_sigma_t,in_sigma_s0,in_sigma_s1
+  PRINT*, 'sigmas', in_sigma_t,in_sigma_s0,in_sigma_s1
+  !parametros na regiao da fonte
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)source_sigma_t,source_sigma_S0,source_sigma_S1
+  PRINT*, 'sigmas fonte', source_sigma_t,source_sigma_S0,source_sigma_S1
+  PAUSE
+  !fonte
+  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)insource
+  PRINT*, 'fonte', insource
+  ! Fecha o arquivo
+  CLOSE(unit=90,status='keep')
+  GOTO 200
+900 PRINT *,'Erro na leitura do arquivo, terminando...'
+  CLOSE(unit=90,status='keep')
+  STOP
+200 CONTINUE
+
+
   DO ll=1, 6
      DO l=1, 6
 
         n=direcoes(l)!numero de direcoes para a varredura
-        ! definicoes das constantes do problema
-        compx=50.d0;compy=50.d0; jj=discret(ll);kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
+
+        jj=discret(ll);kk=jj; hx=compx/jj; hy=compy/kk
+
         !compx=1.d0;compy=1.d0; jj=10;kk=jj; hx=compx/jj; hy=compy/kk;tol=1.0d-6
         PRINT*, 'n ; jxk', n, jj,'x',kk
         prop=jj/50!jj pelo número de pontos que contem a discretização de dados externos no eixo x
@@ -101,24 +138,22 @@ PROGRAM ado_bidimensional
         ALLOCATE(sigma_s1(jj,kk))
         ALLOCATE(s(jj,kk),q(jj,kk) )
         !pontos de divisao das regioes para obter fluxos medios
-        as(1)=1.d0
-        bs(1)=1.d0
-        as(2)=45.d0
-        bs(2)=45.d0
-        as(3)=50.d0
-        bs(3)=50.d0
+
+
         !parametros gerais do programa
-        sigma_t=1.d0
-        sigma_s0=0.95d0
-        sigma_s1=0.5d0
+        sigma_t(1:jj, 1:kk)=in_sigma_t
+        sigma_s0(1:jj, 1:kk)=in_sigma_s0
+        sigma_s1(1:jj, 1:kk)=in_sigma_s1
         !parametros na regiao da fonte
-        sigma_t(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=0.8d0
-        sigma_s0(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=0.4d0
-        sigma_s1(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=0.2d0
+        sigma_t(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=source_sigma_t
+        sigma_s0(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=source_sigma_S0
+        sigma_s1(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=source_sigma_S1
+
 
         !inicializacao da fonte
         q=0.
-        q(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy)) = 1.d0 !magnitude da fonte em [0,as]x[0,bs]
+
+        q(1:NINT(as(1)/hx), 1:NINT(bs(1)/hy))=insource!magnitude da fonte em [0,as]x[0,bs]
         ! s=0
         ! DO i=1, ncell
         !    DO j=1, ncell
@@ -147,7 +182,7 @@ PROGRAM ado_bidimensional
         psi_mediox(n*(n+2)/4+1:n*(n+2)/2,1:jj, kk+1) = 0.d0
         psi_medioy(n*(n+2)/4+1:n*(n+2)/2,jj+1,1: kk) = 0.d0
 
-
+        PRINT*, 'chama SI'
         ! chama SI
         CALL date_and_TIME(values=t0)
         CALL si_bi(n, jj, kk, hx, hy, tol, sigma_t, sigma_s0,sigma_s1, q, psi_mediox, psi_medioy, psi_medioxy, s, nit, as, bs,&
@@ -212,6 +247,7 @@ PROGRAM ado_bidimensional
         psi_medioy = 0.d0
         psi_medioxy= 0.d0
         s=0.d0
+        PRINT*, 'chama si+ado'
         CALL date_and_TIME(values=t0)
         DO i=1, ncell
            DO j=1, ncell

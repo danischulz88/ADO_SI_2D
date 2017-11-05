@@ -58,8 +58,11 @@ PROGRAM ado_bidimensional
   direcoes(4)=8
   direcoes(5)=12
   direcoes(6)=16
-  PRINT *,'Entre o nome do arquivo de dados:'
-  READ *,nome_arquivo
+
+  nome_arquivo = 'prob50.conf'
+
+  ! PRINT *,'Entre o nome do arquivo de dados:'
+  ! READ *,nome_arquivo
   INQUIRE(file=nome_arquivo,exist=existe)
   IF (.NOT.existe) THEN
      PRINT *,'Arquivo inexistente, terminando...'
@@ -67,46 +70,60 @@ PROGRAM ado_bidimensional
   END IF
 
 
-  OPEN(unit=90,file=nome_arquivo,status='old', action='read')
+  OPEN(unit=90, file=nome_arquivo, status='old', action='read')
   !numero de celulas
-  DO i=1,6
-     READ(90, *),discret(i)
-  END DO
-  PRINT*, 'discret', discret
+  PRINT*, 'Numero de celulas:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) discret
+  PRINT*, discret
   !numero de regioes no eixo x
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)ndx
-  PRINT*, 'ndx', ndx
+  PRINT*, 'Numero de regioes no eixo x:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) ndx
+  PRINT*, ndx
   !numero de regioes no eixo y
-  READ(90, '(/A80)')buffer ;PRINT*, 'ok', buffer; READ(buffer, *, err=900)ndy
-  PRINT*, 'ndy', ndy
-  ALLOCATE(R(ndx, ndy), C(ndx, ndy),dig(ndx, ndy), as(ndx), bs(ndy))
+  PRINT*, 'Numero de regioes no eixo y:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) ndy
+  PRINT*, ndy
+
+  ALLOCATE(R(ndx, ndy),C(ndx, ndy), dig(ndx, ndy), as(ndx), bs(ndy))
   nado=4!numero de pontos em x e/ou y para as direcoes
 
   ! definicoes das constantes do problema
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)compx
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)compy
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)tol
-  PRINT*, 'compx, compy, tol', compx, compy, tol
+  PRINT*, 'Comprimento x:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) compx
+  PRINT*, compx
 
-  DO i=1, ndx
-     READ(90, *), as(i)
-  END DO
-  PRINT*, 'as', as
+  PRINT*, 'Comprimento y:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) compy
+  PRINT*, compy
 
-  DO i=1, ndy
-     READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)bs(i)
-  END DO
-  PRINT*, 'bs',bs
+  PRINT*, 'Tolerance:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) tol
+  PRINT*, tol
+
+  PRINT*, 'as:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) as
+  PRINT*, as
+
+  PRINT*, 'bs:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) bs
+  PRINT*, bs
 
   !parametros gerais do programa
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)in_sigma_t,in_sigma_s0,in_sigma_s1
-  PRINT*, 'sigmas', in_sigma_t,in_sigma_s0,in_sigma_s1
-  !parametros na regiao da fonte
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)source_sigma_t,source_sigma_S0,source_sigma_S1
-  PRINT*, 'sigmas fonte', source_sigma_t,source_sigma_S0,source_sigma_S1
+  PRINT*, 'sigmas_t, sigma_s0, sigma_s1:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) in_sigma_t, in_sigma_s0, in_sigma_s1
+  PRINT*, in_sigma_t, in_sigma_s0, in_sigma_s1
+
+  PRINT*, 'source_sigma_t, source_sigma_s0, source_sigma_s1:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) source_sigma_t, source_sigma_s0, source_sigma_s1
+  PRINT*, source_sigma_t, source_sigma_s0, source_sigma_s1
+
   !fonte
-  READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)insource
-  PRINT*, 'fonte', insource
+  PRINT*, 'Fonte:'
+  READ(90, '(/A80)') buffer ; READ(buffer, *, err=900) insource
+  PRINT*, insource
+
+  PRINT*, 'EOF'
+
   ! Fecha o arquivo
   CLOSE(unit=90,status='keep')
   GOTO 200
@@ -123,9 +140,7 @@ PROGRAM ado_bidimensional
         S(i,j)=(dadoscamila(k)+dadoscamila(k+1))/2
      END DO
   END DO
-
   CALL fluxo_regioes(ncell,ncell, 1.d0, 1.d0, ndx, ndy, as, bs, s, C)
-
   DO i=1, ndx
      DO j=1, ndy
         PRINT *,'SI+ADO(forcado Camila):i, j,  fluxos nas regioes C(i,j)=',i, j, C(i,j)
@@ -651,11 +666,15 @@ CONTAINS
 
     ALLOCATE(x(0:ndx), y(0:ndy))
     R=0.d0
+
     x(0)=0
+
     y(0)=0
+
     DO i=1, ndx
        x(i)=NINT(as(i)/hx)
     END DO
+
     DO i=1, ndy
        y(i)=NINT(bs(i)/hy)
     END DO

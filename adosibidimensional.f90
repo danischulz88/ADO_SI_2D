@@ -17,6 +17,9 @@ PROGRAM ado_bidimensional
   !variaveis de automatizacao
   INTEGER, DIMENSION(6)::direcoes, discret
   !prop eh o numero de vezes que o numero de pontos fornecidos pelo ado forcado  cabe na malha
+
+  ! TESTING NEW BRANCH
+
   !Varredura 2D
 
   ! Considera o particionamento de uma regiao de comprimento LxM em J celulas ao longo do eixo X,

@@ -6,7 +6,7 @@ PROGRAM ado_bidimensional
   DOUBLE PRECISION::  hx, hy, compx, compy, tol
   DOUBLE PRECISION:: in_sigma_t, in_sigma_s0, in_sigma_s1, source_sigma_t, source_sigma_s0, source_sigma_s1, insource
   DOUBLE PRECISION, DIMENSION(:,:,:), ALLOCATABLE :: psi_medioxy, psi_medioy,psi_mediox
-  DOUBLE PRECISION, DIMENSION (:,:), ALLOCATABLE ::sigma_t, sigma_s0, sigma_s1, q, R
+  DOUBLE PRECISION, DIMENSION (:,:), ALLOCATABLE ::sigma_t, sigma_s0, sigma_s1, q, R, C, dig
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE:: as, bs
   DOUBLE PRECISION, DIMENSION(5000):: dadoscamila
   CHARACTER(len=80) :: nome_arquivo,buffer
@@ -29,6 +29,8 @@ PROGRAM ado_bidimensional
   OPEN(unit=10,file='fluxbidi.txt')
   OPEN(unit=20,file='regioessi.txt')
   OPEN(unit=30,file='regioessiado.txt')
+  OPEN(unit=50,file='digsesi.txt')
+  OPEN(unit=60,file='digseado.txt')
 
   !numero de células no eixo x para a descretização forçada
   OPEN(unit=40,file='dadosproblema50.dat',status='old')
@@ -77,7 +79,7 @@ PROGRAM ado_bidimensional
   !numero de regioes no eixo y
   READ(90, '(/A80)')buffer ;PRINT*, 'ok', buffer; READ(buffer, *, err=900)ndy
   PRINT*, 'ndy', ndy
-  ALLOCATE(R(ndx, ndy), as(ndx), bs(ndy))
+  ALLOCATE(R(ndx, ndy), C(ndx, ndy),dig(ndx, ndy), as(ndx), bs(ndy))
   nado=4!numero de pontos em x e/ou y para as direcoes
 
   ! definicoes das constantes do problema
@@ -91,12 +93,8 @@ PROGRAM ado_bidimensional
   END DO
   PRINT*, 'as', as
 
-  PRINT*, 'bs', bs
-  PAUSE
   DO i=1, ndy
      READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)bs(i)
-     PRINT*, 'i, bs(i)', i, bs(i)
-     PAUSE
   END DO
   PRINT*, 'bs',bs
 
@@ -106,7 +104,6 @@ PROGRAM ado_bidimensional
   !parametros na regiao da fonte
   READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)source_sigma_t,source_sigma_S0,source_sigma_S1
   PRINT*, 'sigmas fonte', source_sigma_t,source_sigma_S0,source_sigma_S1
-  PAUSE
   !fonte
   READ(90, '(/A80)')buffer ; READ(buffer, *, err=900)insource
   PRINT*, 'fonte', insource
@@ -118,6 +115,25 @@ PROGRAM ado_bidimensional
   STOP
 200 CONTINUE
 
+  ALLOCATE(s(ncell, ncell))
+  s=0
+  DO i=1, ncell
+     DO j=1, ncell
+        k=2*j+2*ncell*(i-1)-1
+        S(i,j)=(dadoscamila(k)+dadoscamila(k+1))/2
+     END DO
+  END DO
+
+  CALL fluxo_regioes(ncell,ncell, 1.d0, 1.d0, ndx, ndy, as, bs, s, C)
+
+  DO i=1, ndx
+     DO j=1, ndy
+        PRINT *,'SI+ADO(forcado Camila):i, j,  fluxos nas regioes C(i,j)=',i, j, C(i,j)
+     ENDDO
+  END DO
+
+
+  DEALLOCATE(s)
 
   DO ll=1, 6
      DO l=1, 6
@@ -161,13 +177,13 @@ PROGRAM ado_bidimensional
         !       S((i-1)*prop+1:prop*i, (j-1)*prop+1:prop*j)=(dadoscamila(k)+dadoscamila(k+1))/2
         !    END DO
         ! END DO
-
-
-        ! CALL fluxo_regioes(jj,kk, hx, hy, ndx, ndy, as, bs, s, R)
-
+        !
+        !
+        ! CALL fluxo_regioes(jj,kk, hx, hy, ndx, ndy, as, bs, s, C)
+        !
         ! DO i=1, ndx
         !    DO j=1, ndy
-        !       PRINT *,'SI+ADO(forcado Camila):i, j,  fluxos nas regioes R(i,j)=',i, j, R(i,j)
+        !       PRINT *,'SI+ADO(forcado Camila):i, j,  fluxos nas regioes C(i,j)=',i, j, C(i,j)
         !    ENDDO
         ! END DO
 
@@ -202,7 +218,18 @@ PROGRAM ado_bidimensional
               WRITE(20, 100)i, j, R(i,j)
            ENDDO
         END DO
-
+        CALL digse(ndx, ndy, C, R, dig)
+        DO i=1, ndx
+           DO j=1, ndy
+              PRINT *,'SI:i, j,  digtos exatos nas regioes R(i,j)=',i, j, dig(i,j)
+           ENDDO
+        END DO
+        WRITE(50, *)n, jj, nit
+        DO i=1, ndx
+           DO j=i , ndy
+              WRITE(50, 100)i, j, dig(i,j)
+           ENDDO
+        END DO
 
         !$$$$$$             ! inicializa psi na fronteira
         !$$$$$$             psi_mediox(n*(n+2)/4+1:n*(n+2)/2,1:jj, kk+1) = 0.d0
@@ -275,6 +302,18 @@ PROGRAM ado_bidimensional
         DO i=1, ndx
            DO j=1, ndy
               WRITE(30, 100)i, j, R(i,j)
+           ENDDO
+        END DO
+        CALL digse(ndx, ndy, C, R, dig)
+        DO i=1, ndx
+           DO j=1, ndy
+              PRINT *,'SI+ado:i, j,  digtos exatos nas regioes R(i,j)=',i, j, dig(i,j)
+           ENDDO
+        END DO
+        WRITE(60, *)n, jj, nit
+        DO i=1, ndx
+           DO j=i , ndy
+              WRITE(60, 100)i, j, dig(i,j)
            ENDDO
         END DO
         DEALLOCATE (psi_medioxy, psi_mediox,psi_medioy,sigma_t, sigma_s0,sigma_s1, s,q)
@@ -638,6 +677,24 @@ CONTAINS
     END DO
 
   END SUBROUTINE fluxo_regioes
+
+  !==========================================================
+  SUBROUTINE digse(ndx, ndy, C, R, dig)
+    !============================================================
+    IMPLICIT NONE
+    INTEGER, INTENT(in)::ndx, ndy
+    DOUBLE PRECISION, DIMENSION(:,:), INTENT(in):: C, R
+    DOUBLE PRECISION, DIMENSION(:,:), INTENT(out)::dig
+    INTEGER::i, j
+    dig=0
+
+    DO i=1, ndx
+       DO j=1, ndy
+          dig(i,j)=-LOG(ABS(C(i,j)-R(i,j))/ABS(C(i,j)))
+       END DO
+    END DO
+
+  END SUBROUTINE digse
   !====================================================
   SUBROUTINE nosepesosado(n,M,Omegamu, Omegaeta, peso)
     !====================================================
